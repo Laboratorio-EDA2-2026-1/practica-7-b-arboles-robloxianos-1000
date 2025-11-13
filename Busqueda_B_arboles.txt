@@ -1,2 +1,56 @@
-Implementa aquí la operación de búsqueda. 
-Pueden modificar la extensión del documento para que se ajuste al lenguaje de su elección y comentar estas instrucciones.
+class Nodo:
+    def __init__(self, dato):
+        self.dato = dato
+        self.izq = None
+        self.der = None
+
+
+class ArbolBST:
+    def __init__(self):
+        self.raiz = None
+
+    def insertar(self, dato):
+        self.raiz = self.insertarRecursivo(self.raiz, dato)
+
+    def insertarRecursivo(self, nodo, dato):
+        if nodo is None:
+            return Nodo(dato)
+
+        if dato < nodo.dato:
+            nodo.izq = self.insertarRecursivo(nodo.izq, dato)
+        elif dato > nodo.dato:
+            nodo.der = self.insertarRecursivo(nodo.der, dato)
+
+        return nodo
+
+    def buscar(self, dato):
+        return self.buscarRecursivo(self.raiz, dato)
+
+    def buscarRecursivo(self, nodo, dato):
+        if nodo is None:
+            return None
+
+        if dato == nodo.dato:
+            return nodo
+
+        if dato < nodo.dato:
+            return self.buscarRecursivo(nodo.izq, dato)
+        else:
+            return self.buscarRecursivo(nodo.der, dato)
+
+
+if __name__ == "__main__":
+    arbol = ArbolBST()
+
+    numeros = [98, 32, 18, 20, 53,2, 19, 35, 32, 100]
+
+    for n in numeros:
+        arbol.insertar(n)
+
+    buscado = 32
+    resultado = arbol.buscar(buscado)
+
+    if resultado:
+        print("Encontrado:", resultado.dato)
+    else:
+        print("No encontrado")
