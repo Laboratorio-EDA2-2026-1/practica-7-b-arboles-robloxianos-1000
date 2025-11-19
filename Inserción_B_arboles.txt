@@ -1,2 +1,107 @@
-Implementa aquí todos los procesos necesarios para la operación de inserción. 
-Pueden modificar la extensión del documento para que se ajuste al lenguaje de su elección y comentar estas instrucciones.
+# Inserción
+class NodoB:
+    def __init__(self, t, esHoja=False):
+        self.t = t                  # Grado mínimo
+        self.esHoja = esHoja        # Si es hoja o no
+        self.valores = []           # Las llaves (datos)
+        self.hijos = []             # Hijos del nodo
+
+    # Insertar cuando el nodo NO está lleno
+    def insertar_no_lleno(self, valor):
+        i = len(self.valores) - 1
+
+        # Si es hoja, lo metemos directo
+        if self.esHoja:
+            while i >= 0 and valor < self.valores[i]:
+                i -= 1
+            self.valores.insert(i + 1, valor)
+
+        else:
+            # Buscar hijo adecuado
+            while i >= 0 and valor < self.valores[i]:
+                i -= 1
+            i += 1
+
+            # Si el hijo donde vamos está lleno → dividirlo
+            if len(self.hijos[i].valores) == 2 * self.t - 1:
+                self.dividir_hijo(i)
+
+                # Después del split elegir a qué hijo entrar
+                if valor > self.valores[i]:
+                    i += 1
+
+            self.hijos[i].insertar_no_lleno(valor)
+
+    # Dividir un hijo lleno
+    def dividir_hijo(self, i):
+        t = self.t
+        hijo = self.hijos[i]
+        nuevo = NodoB(t, hijo.esHoja)
+
+        # Lo de la derecha va al nuevo nodo
+        nuevo.valores = hijo.valores[t:]
+        valorDelMedio = hijo.valores[t - 1]
+
+        # Lo de la izquierda se queda en el hijo viejo
+        hijo.valores = hijo.valores[:t - 1]
+
+        # Si NO es hoja, dividir también los hijos
+        if not hijo.esHoja:
+            nuevo.hijos = hijo.hijos[t:]
+            hijo.hijos = hijo.hijos[:t]
+
+        # Insertar el nuevo hijo y el valor del medio al padre
+        self.hijos.insert(i + 1, nuevo)
+        self.valores.insert(i, valorDelMedio)
+
+
+# Árbol B completo
+class ArbolB:
+    def __init__(self, t):
+        self.t = t
+        self.raiz = NodoB(t, esHoja=True)
+
+    # Inserción general
+    def insertar(self, valor):
+        raiz = self.raiz
+
+        # Si la raíz está llena, hay que dividirla
+        if len(raiz.valores) == 2 * self.t - 1:
+            nuevaRaiz = NodoB(self.t, esHoja=False)
+            nuevaRaiz.hijos.append(raiz)
+            nuevaRaiz.dividir_hijo(0)
+
+            i = 0
+            if valor > nuevaRaiz.valores[0]:
+                i = 1
+
+            nuevaRaiz.hijos[i].insertar_no_lleno(valor)
+            self.raiz = nuevaRaiz
+
+        else:
+            raiz.insertar_no_lleno(valor)
+
+    # Imprimir el árbol
+    def mostrar(self, nodo=None, nivel=0):
+        if nodo is None:
+            nodo = self.raiz
+
+        print("  " * nivel, nodo.valores)
+
+        if not nodo.esHoja:
+            for hijo in nodo.hijos:
+                self.mostrar(hijo, nivel + 1)
+
+
+# MAIN
+if __name__ == "__main__":
+    arbol = ArbolB(3)
+
+    datos = [10, 20, 5, 6, 12, 30, 7, 17, 25, 3, 8, 15]
+
+    for d in datos:
+        arbol.insertar(d)
+
+    print("Árbol B final:")
+    arbol.mostrar()
+

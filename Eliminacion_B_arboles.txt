@@ -1,2 +1,320 @@
-Implementa aquí todos los procesos necesarios para la operación de eliminación. 
-Pueden modificar la extensión del documento para que se ajuste al lenguaje de su elección y comentar estas instrucciones.
+# Implementa aquí todos los procesos necesarios para la operación de eliminación. 
+# Pueden modificar la extensión del documento para que se ajuste al lenguaje de su elección y comentar estas instrucciones.
+
+
+class NodoBArbol:
+    def __init__(self, t, es_hoja=False):
+        self.t = t  
+        self.claves = []  
+        self.hijos = []  
+        self.es_hoja = es_hoja  
+    
+    def __str__(self):
+        return f"claves: {self.claves}, hoja: {self.es_hoja}, hijos: {len(self.hijos)}"
+
+class BArbol:
+    def __init__(self, t):
+        self.raiz = None
+        self.t = t  
+    
+    def recorrer(self):
+        
+        if self.raiz is not None:
+            self._recorrer(self.raiz)
+    
+    def _recorrer(self, nodo):
+        for i in range(len(nodo.claves)):
+            if not nodo.es_hoja:
+                self._recorrer(nodo.hijos[i])
+            print(nodo.claves[i], end=" ")
+        
+        if not nodo.es_hoja:
+            self._recorrer(nodo.hijos[len(nodo.claves)])
+    
+    def buscar(self, clave):
+        
+        return self._buscar(self.raiz, clave) if self.raiz else None
+    
+    def _buscar(self, nodo, clave):
+        i = 0
+        while i < len(nodo.claves) and clave > nodo.claves[i]:
+            i += 1
+        
+        if i < len(nodo.claves) and nodo.claves[i] == clave:
+            return nodo
+        
+        if nodo.es_hoja:
+            return None
+        
+        return self._buscar(nodo.hijos[i], clave)
+    
+    def insertar(self, clave):
+       
+        if self.raiz is None:
+            self.raiz = NodoBArbol(self.t, True)
+            self.raiz.claves.append(clave)
+        else:
+            if len(self.raiz.claves) == 2 * self.t - 1:
+                nueva_raiz = NodoBArbol(self.t, False)
+                nueva_raiz.hijos.append(self.raiz)
+                self._dividir_hijo(nueva_raiz, 0)
+                
+                i = 0
+                if nueva_raiz.claves[0] < clave:
+                    i += 1
+                self._insertar_no_lleno(nueva_raiz.hijos[i], clave)
+                
+                self.raiz = nueva_raiz
+            else:
+                self._insertar_no_lleno(self.raiz, clave)
+    
+    def _insertar_no_lleno(self, nodo, clave):
+        i = len(nodo.claves) - 1
+        
+        if nodo.es_hoja:
+            nodo.claves.append(0)  
+            while i >= 0 and nodo.claves[i] > clave:
+                nodo.claves[i + 1] = nodo.claves[i]
+                i -= 1
+            nodo.claves[i + 1] = clave
+        else:
+            while i >= 0 and nodo.claves[i] > clave:
+                i -= 1
+            
+            i += 1
+            if len(nodo.hijos[i].claves) == 2 * self.t - 1:
+                self._dividir_hijo(nodo, i)
+                if nodo.claves[i] < clave:
+                    i += 1
+            
+            self._insertar_no_lleno(nodo.hijos[i], clave)
+    
+    def _dividir_hijo(self, padre, indice):
+        t = self.t
+        hijo_lleno = padre.hijos[indice]
+        nuevo_hijo = NodoBArbol(t, hijo_lleno.es_hoja)
+        
+        padre.claves.insert(indice, hijo_lleno.claves[t - 1])
+        padre.hijos.insert(indice + 1, nuevo_hijo)
+        
+        nuevo_hijo.claves = hijo_lleno.claves[t:(2 * t - 1)]
+        hijo_lleno.claves = hijo_lleno.claves[0:(t - 1)]
+        
+        if not hijo_lleno.es_hoja:
+            nuevo_hijo.hijos = hijo_lleno.hijos[t:(2 * t)]
+            hijo_lleno.hijos = hijo_lleno.hijos[0:t]
+    
+    # metodos de eliminacion
+    def eliminar(self, clave):
+       
+        if not self.raiz:
+            print("el arbol esta vacio")
+            return
+        
+        self._eliminar(self.raiz, clave)
+        
+        # si la raiz queda sin claves, hacemos que su primer hijo sea la nueva raíz
+        if len(self.raiz.claves) == 0:
+            if self.raiz.es_hoja:
+                self.raiz = None
+            else:
+                self.raiz = self.raiz.hijos[0]
+    
+    def _eliminar(self, nodo, clave):
+        t = self.t
+        indice = self._encontrar_indice_clave(nodo, clave)
+        
+        
+        if indice < len(nodo.claves) and nodo.claves[indice] == clave and nodo.es_hoja:
+            self._eliminar_de_hoja(nodo, indice)
+        
+        
+        elif indice < len(nodo.claves) and nodo.claves[indice] == clave and not nodo.es_hoja:
+            self._eliminar_de_interno(nodo, indice)
+        
+        
+        else:
+            if nodo.es_hoja:
+                print(f"la clave {clave} no existe en el arbol")
+                return
+            
+            
+            es_ultimo = (indice == len(nodo.claves))
+            
+            if len(nodo.hijos[indice].claves) < t:
+                self._llenar(nodo, indice)
+            
+            
+            if es_ultimo and indice > len(nodo.claves):
+                self._eliminar(nodo.hijos[indice - 1], clave)
+            else:
+                self._eliminar(nodo.hijos[indice], clave)
+    
+    def _encontrar_indice_clave(self, nodo, clave):
+        
+        indice = 0
+        while indice < len(nodo.claves) and nodo.claves[indice] < clave:
+            indice += 1
+        return indice
+    
+    def _eliminar_de_hoja(self, nodo, indice):
+        
+        nodo.claves.pop(indice)
+    
+    def _eliminar_de_interno(self, nodo, indice):
+        
+        t = self.t
+        clave = nodo.claves[indice]
+        
+        
+        if len(nodo.hijos[indice].claves) >= t:
+            predecesor = self._obtener_predecesor(nodo, indice)
+            nodo.claves[indice] = predecesor
+            self._eliminar(nodo.hijos[indice], predecesor)
+        
+        
+        elif len(nodo.hijos[indice + 1].claves) >= t:
+            sucesor = self._obtener_sucesor(nodo, indice)
+            nodo.claves[indice] = sucesor
+            self._eliminar(nodo.hijos[indice + 1], sucesor)
+        
+       
+        else:
+            self._fusionar(nodo, indice)
+            self._eliminar(nodo.hijos[indice], clave)
+    
+    def _obtener_predecesor(self, nodo, indice):
+        
+        actual = nodo.hijos[indice]
+        while not actual.es_hoja:
+            actual = actual.hijos[len(actual.claves)]
+        return actual.claves[-1]
+    
+    def _obtener_sucesor(self, nodo, indice):
+       
+        actual = nodo.hijos[indice + 1]
+        while not actual.es_hoja:
+            actual = actual.hijos[0]
+        return actual.claves[0]
+    
+    def _llenar(self, nodo, indice):
+       
+        t = self.t
+        
+        if indice != 0 and len(nodo.hijos[indice - 1].claves) >= t:
+            self._tomar_del_anterior(nodo, indice)
+        elif indice != len(nodo.claves) and len(nodo.hijos[indice + 1].claves) >= t:
+            self._tomar_del_siguiente(nodo, indice)
+        else:
+            if indice != len(nodo.claves):
+                self._fusionar(nodo, indice)
+            else:
+                self._fusionar(nodo, indice - 1)
+    
+    def _tomar_del_anterior(self, nodo, indice):
+        
+        hijo = nodo.hijos[indice]
+        hermano = nodo.hijos[indice - 1]
+        
+        # movemos una clave del hermano al padre
+        hijo.claves.insert(0, nodo.claves[indice - 1])
+        
+        # movemos la última clave del hermano al padre
+        if not hijo.es_hoja:
+            hijo.hijos.insert(0, hermano.hijos.pop())
+        
+        nodo.claves[indice - 1] = hermano.claves.pop()
+    
+    def _tomar_del_siguiente(self, nodo, indice):
+        
+        hijo = nodo.hijos[indice]
+        hermano = nodo.hijos[indice + 1]
+        
+        # movemos una clave del hermano al padre
+        hijo.claves.append(nodo.claves[indice])
+        
+        # movemos la primera clave del hermano al padre
+        if not hijo.es_hoja:
+            hijo.hijos.append(hermano.hijos.pop(0))
+        
+        nodo.claves[indice] = hermano.claves.pop(0)
+    
+    def _fusionar(self, nodo, indice):
+        
+        t = self.t
+        hijo = nodo.hijos[indice]
+        hermano = nodo.hijos[indice + 1]
+        
+        # movemos la clave del padre al hijo
+        hijo.claves.append(nodo.claves.pop(indice))
+        
+        # copiamos claves del hermano
+        hijo.claves.extend(hermano.claves)
+        
+        # copiamos hijos del hermano si no son hojas
+        if not hijo.es_hoja:
+            hijo.hijos.extend(hermano.hijos)
+        
+        # eliminamos el hermano fusionado
+        nodo.hijos.pop(indice + 1)
+    
+    def mostrar(self):
+       
+        if not self.raiz:
+            print("el arbol esta vacio")
+            return
+        
+        cola = [(self.raiz, 0)]
+        nivel_actual = 0
+        
+        while cola:
+            nodo, nivel = cola.pop(0)
+            
+            if nivel > nivel_actual:
+                print()
+                nivel_actual = nivel
+            
+            print(f"[{', '.join(map(str, nodo.claves))}]", end="  ")
+            
+            if not nodo.es_hoja:
+                for hijo in nodo.hijos:
+                    cola.append((hijo, nivel + 1))
+        print()
+
+# main
+if __name__ == "__main__":
+    # creamos un B-arbol de grado 3
+    arbol_b = BArbol(3)
+    
+    # insertamos algunas claves
+    claves_a_insertar = [10, 20, 5, 6, 12, 30, 7, 17, 3, 8, 25, 15]
+    print("insertando claves:", claves_a_insertar)
+    
+    for clave in claves_a_insertar:
+        arbol_b.insertar(clave)
+    
+    print("\narbol despues de las inserciones:")
+    arbol_b.mostrar()
+    
+    # eliminamos algunas claves
+    claves_a_eliminar = [6, 13, 7, 4, 20]
+    print(f"\neliminando claves: {claves_a_eliminar}")
+    
+    for clave in claves_a_eliminar:
+        print(f"\neliminando {clave}:")
+        arbol_b.eliminar(clave)
+        arbol_b.mostrar()
+    
+    # buscamos algunas claves
+    print("\nbusquedas:")
+    for clave in [10, 15, 100]:
+        resultado = arbol_b.buscar(clave)
+        if resultado:
+            print(f"clave {clave} encontrada")
+        else:
+            print(f"clave {clave} no encontrada")
+    
+    # muestra recorrido en orden
+    print("\nrecorrido en orden del árbol:")
+    arbol_b.recorrer()
+    print()
